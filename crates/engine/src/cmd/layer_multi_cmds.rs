@@ -33,9 +33,9 @@ pub(crate) use moves::{wrap_path, wrap_surface, wraps_linked_masks};
 use selection::{doc_state, find_layers, select_all_layers, select_linked};
 pub(crate) use selection::{mask_targets, recorded_step, reselect, targets, top_level};
 pub use selection::{select, selected, set_selection};
+use structure::{can_group_from_layers, group_from_layers, link_layers, lock_layers, merge_layers, rename_layer, reverse};
 pub(crate) use structure::{check_group_depth, deletion_neighbours, relink_copies};
 pub use structure::{delete_selected, duplicate_selected, group_layers, set_visible_selected};
-use structure::{link_layers, lock_layers, merge_layers, rename_layer, reverse};
 
 // ---------- enabled predicates ----------
 
@@ -159,8 +159,8 @@ pub fn specs() -> Vec<CommandSpec> {
             &["Layer", "New"],
             None,
             r##"{"layer":id?,"name":text?,"color":"none|red|orange|yellow|green|seafoam|blue|indigo|magenta|fuchsia|violet|gray"="none","mode":str="passThrough" (blend mode),"opacity":0..100=100 (percent)} (no layer: every selected layer; the new group starts collapsed)"##,
-            has_layer,
-            group_layers
+            can_group_from_layers,
+            group_from_layers
         ),
         spec!("layer.arrange.reverse", "Reverse", &["Layer", "Arrange"], None, "{}", two_plus, |s, _| reverse(s)),
         spec!(
@@ -178,6 +178,9 @@ pub fn specs() -> Vec<CommandSpec> {
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+mod group_from_layers_background_tests;
 
 #[cfg(test)]
 mod layers_panel_parity_tests;
