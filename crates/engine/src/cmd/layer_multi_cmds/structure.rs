@@ -111,6 +111,37 @@ pub(crate) fn check_group_depth(doc: &Document, what: &str) -> Result<()> {
     Ok(())
 }
 
+/// Group from Layers (`layer.new.groupFromLayers`) refuses the Background, alone or among other
+/// layers, as the reference application does: inside a group it would stop being the Background.
+/// Group Layers (`layer.groupLayers`) shares [`group_layers`] and is not checked here, since its
+/// behaviour with the Background was not measured.
+const GROUP_BACKGROUND_REFUSAL: &str = "the Background can't go into a group";
+
+/// The enabled check of Group from Layers: a selection without the Background.
+pub(super) fn can_group_from_layers(s: &Session) -> std::result::Result<(), String> {
+    let ids = selected(s);
+    if ids.is_empty() {
+        return Err("no layer selected".into());
+    }
+    if s.active().is_some_and(|d| ids.iter().any(|id| d.doc.is_background(*id))) {
+        return Err(GROUP_BACKGROUND_REFUSAL.into());
+    }
+    Ok(())
+}
+
+/// Group from Layers: [`group_layers`], refused before any edit when the layers it would group
+/// (the explicit `layer`, else the selection) include the Background.
+pub(super) fn group_from_layers(s: &mut Session, p: &Value) -> Result<Value> {
+    let ids = match crate::commands::explicit_layer(s, p)? {
+        Some(id) => vec![id],
+        None => selected(s),
+    };
+    if s.active().is_some_and(|d| ids.iter().any(|id| d.doc.is_background(*id))) {
+        return Err(EngineError::Other(GROUP_BACKGROUND_REFUSAL.into()));
+    }
+    group_layers(s, p)
+}
+
 /// Group Layers (⌘G) / Group from Layers: the explicit layer, or every selected layer, moves
 /// into a new, collapsed group placed where the top-most of them was. Bottom-to-top order is
 /// preserved. The New Group dialog's colour, mode and opacity are set in the same history step.
